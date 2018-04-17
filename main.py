@@ -9,10 +9,12 @@ import sys
 import time
 import commands
 import collections
+import re
 
 class TestUnit:
 	def __init__(self):
 		self.stationName="IP-BFT"
+		self.slot=0
 		self.testDate=time.strftime("%Y-%m-%d", time.localtime())
 		self.serialNumber=""
 		self.Version="1.0"
@@ -80,13 +82,26 @@ class  CINT:
 	    	self.testUnits=[]
 	    	self.testsockets=self.cf.get("test_system", "test_slots").split(",")
 	    	self.sc=SSHCommander()
+	def Init(self):
 		j=0
 	    	for i in self.testsockets:
 			if i=="0":
 				j=j+1
 				continue
-	    		serialNumber=raw_input ("please input serial number for slot %s:" %(j+1))	
+			while True:
+	    			serialNumber=raw_input ("please input serial number for slot %s:" %(j+1))	
+			
+				#to check the sn format
+				self.pattern= "J\w{8}$"
+		        	p = re.compile(self.pattern)
+        			if p.match(serialNumber):
+            				break
+        			else:
+	        			print self.bc.BGFAIL("\nplease input correct serial number %s.\n" %(self.pattern))
+            				continue
+
 	    		testUnit=TestUnit()
+	    		testUnit.slot=j+1
 	    		testUnit.serialNumber= serialNumber
 	            	testUnit.log_filename = testUnit.serialNumber + \
 	    	     				'-' + datetime.now().strftime("%Y%m%d%H%M%S") + '.log'
@@ -99,12 +114,17 @@ class  CINT:
 	    	self.testItems["Interposer_EthernetCheck1"]="~/int/UTS_InterposerEthernetCheck.py -b %s -i 10"
 	    	self.testItems["Interposer_EthernetCheck2"]="~/int/UTS_InterposerEthernetCheck.py -b %s -i 20"
 	    	self.testItems["Interposer_NvmeCheck"]="~/int/UTS_NvmeCheck.py -i %s -c 0"
+
+		startStatus=raw_input ("Are you ready to continue testing (yes/no)?")
+		if startStatus.upper()=="YES" or startStatus.upper()=="Y":
+			return True
+		else:
+			return False
 	def Run(self):
 	    	length=int(self.cf.get("Show_Format", "line_length"))
 	    	spacelength=int(self.cf.get("Show_Format", "space_between_units"))
 	    	spacestar=int(self.cf.get("Show_Format", "begin_star"))
 	    	max_test_name_length=int(self.cf.get("Show_Format", "max_test_name_length"))
-		print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 	    	#do test
 	    	#step 1 power on test unit
 	    	#power on
@@ -160,6 +180,7 @@ class  CINT:
 	    	line8=""
 	    	line9=""
 	    	self.lines=locals()
+	    	str_slot="#"*spacestar+"   SLOT : %s  "
 	    	str_serial_number="#"*spacestar+"     SN : %s  "
 	    	str_part_number=  "#"*spacestar+"     PN : %s  "
 	    	str_test_result=  "#"*spacestar+" Result : %s  "
@@ -194,17 +215,21 @@ class  CINT:
 	    		testUnit.log.AddHeader_Long(header_complete_str,'%s/FTLog/%s/%s' %(home_dir, (testUnit.testResult and "PASS" or "FAIL"),testUnit.log_filename))
 		testReutsArray=["","","",""]
 	    	for testUnit in self.testUnits:
+			#show test slot/unit information
 	    		if testUnit.testResult:
 	    			line1+= (self.bc.BGPASS("#"*length)+" "*spacelength)
 	    			line2+= (self.bc.BGPASS((str_serial_number %(testUnit.serialNumber)).ljust(length,"#").ljust(length+spacelength)))
 	    			line3+= (self.bc.BGPASS((str_part_number %(testUnit.partNumber)).ljust(length,"#").ljust(length+spacelength)))
 	    			line4+= (self.bc.BGPASS((str_test_result %(testUnit.testResult and "PASSED" or "FAILED")).ljust(length,"#").ljust(length+spacelength)))
+	    			line5+= (self.bc.BGFAIL((str_slot %(testUnit.slot)).ljust(length,"#").ljust(length+spacelength)))
 	    		else:
 	    			line1+= (self.bc.BGFAIL("#"*length)+" "*spacelength)
 	    			line2+= (self.bc.BGFAIL((str_serial_number %(testUnit.serialNumber)).ljust(length,"#").ljust(length+spacelength)))
 	    			line3+= (self.bc.BGFAIL((str_part_number %(testUnit.partNumber)).ljust(length,"#").ljust(length+spacelength)))
 	    			line4+= (self.bc.BGFAIL((str_test_result %(testUnit.testResult and "PASSED" or "FAILED")).ljust(length,"#").ljust(length+spacelength)))
+	    			line5+= (self.bc.BGFAIL((str_slot %(testUnit.slot)).ljust(length,"#").ljust(length+spacelength)))
 	    			#line4+= (self.bc.BGFAIL(str_test_result %(testUnit.serialNumber,"#"*(length-len("SN: %s" %testUnit.serialNumber)-spacestar))))
+			#show test slot/unit information
 	    		i=0
 	    		for testitem in testUnit.testItems:
 	    			if testUnit.testResult:
@@ -217,6 +242,7 @@ class  CINT:
 	    		
 	    	print 
 	    	print line1
+	    	print line5
 	    	print line2
 	    	print line3
 	    	print line4
@@ -226,4 +252,5 @@ class  CINT:
 if __name__=="__main__":
 	while True:
 		cint=CINT()
-		cint.Run()
+		if cint.Init():
+			cint.Run()
