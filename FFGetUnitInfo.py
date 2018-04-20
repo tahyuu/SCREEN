@@ -10,22 +10,22 @@ class FFGetUnitInfo():
     def __init__(self):
         self.cf = ConfigParser.ConfigParser()
         self.cf.read("config.ini")
-	    self.serialNumber=""
+	self.serialNumber=""
     	self.hostname = self.cf.get("BootOS_Info", "boot_os_ipaddr") 
     	self.username =	self.cf.get("BootOS_Info", "boot_os_user_name") 
     	self.password = self.cf.get("BootOS_Info", "boot_os_password")
-	    self.s = open('getUnitInfo.xml', 'r').read()
-	    self.log = Log()
+	self.s = open('getUnitInfo.xml', 'r').read()
+	self.log = Log()
         self.log.Open("test.txt")
-	    self.SERVER_ADDR = "172.30.30.209"
-	    #self.SERVER_ADDR = "pnantd27/FFTesterWS_HONEYWELL/"
-	    #self.SERVER_ADDR = "pnantd27"
-	    self.SERVER_PORT = 80
-	    self.SOAP_ACTION = "http://www.flextronics.com/FFTesterWS/GetUnitInfo"
-	    #self.SOAP_ACTION = "http://pnantd27/FFTesterWS_HONEYWELL/FFTesterWS.asmx?op=GetUnitInfo"
-	    #self.SOAP_ACTION = "http://pnantd27/FFTesterWS_HONEYWELL/FFTesterWS.asmx?op=GetUnitInfo"
-	    self.STATION_NAME = 'BFT'
-	    self.map = {	'HLASN': 'CanisterSN', \
+	self.SERVER_ADDR = "172.30.30.209"
+	#self.SERVER_ADDR = "pnantd27/FFTesterWS_HONEYWELL/"
+	#self.SERVER_ADDR = "pnantd27"
+	self.SERVER_PORT = 80
+	self.SOAP_ACTION = "http://www.flextronics.com/FFTesterWS/GetUnitInfo"
+	#self.SOAP_ACTION = "http://pnantd27/FFTesterWS_HONEYWELL/FFTesterWS.asmx?op=GetUnitInfo"
+	#self.SOAP_ACTION = "http://pnantd27/FFTesterWS_HONEYWELL/FFTesterWS.asmx?op=GetUnitInfo"
+	self.STATION_NAME = 'BFT'
+	self.map = {	'HLASN': 'CanisterSN', \
 			'Canister_PN': 'CanisterPN', \
 			'MAC4': 'BmcMAC1', \
 			'MAC5': 'BmcMAC2', \
