@@ -1,29 +1,31 @@
 #!/usr/bin/env python
 
 import httplib, os
-from TestBase import *
 from datetime import datetime
 from optparse import OptionParser
-from Configure import *
 from Log import *
-from TestBase import Error
+import ConfigParser	
 
-class FFGetUnitInfo(TestBase):
+class FFGetUnitInfo():
     section_str = "Section: FlexFlow GetUnitInfo"
     #def __init__(self, config, log):
-    def __init__(self, config,eventManager,log, comm):
-	TestBase.__init__(self, config, eventManager, log, comm)
-	self.config = config
-	self.log = log
-	self.s = open('/home/bft/SatiFT/TestConfig/getUnitInfo.xml', 'r').read()
-	self.SERVER_ADDR = "10.192.155.42"
+    def __init__(self):
+    	self.cf = ConfigParser.ConfigParser()
+    	self.cf.read("config.ini")
+	self.serialNumber=""
+    	self.hostname = self.cf.get("BootOS_Info", "boot_os_ipaddr") 
+    	self.username =	self.cf.get("BootOS_Info", "boot_os_user_name") 
+    	self.password = self.cf.get("BootOS_Info", "boot_os_password")
+	self.s = open('getUnitInfo.xml', 'r').read()
+	self.log = Log()
+	self.SERVER_ADDR = "172.30.30.209"
 	#self.SERVER_ADDR = "pnantd27/FFTesterWS_HONEYWELL/"
 	#self.SERVER_ADDR = "pnantd27"
 	self.SERVER_PORT = 80
 	self.SOAP_ACTION = "http://www.flextronics.com/FFTesterWS/GetUnitInfo"
 	#self.SOAP_ACTION = "http://pnantd27/FFTesterWS_HONEYWELL/FFTesterWS.asmx?op=GetUnitInfo"
 	#self.SOAP_ACTION = "http://pnantd27/FFTesterWS_HONEYWELL/FFTesterWS.asmx?op=GetUnitInfo"
-	self.STATION_NAME = 'SGT-BFT'
+	self.STATION_NAME = 'BFT'
 	self.map = {	'HLASN': 'CanisterSN', \
 			'Canister_PN': 'CanisterPN', \
 			'MAC4': 'BmcMAC1', \
@@ -59,10 +61,12 @@ class FFGetUnitInfo(TestBase):
         f.close()
 
     def Prepare(self):
-	s1 = self.s.replace("@SERIAL_NUM@", self.config.Get('PcbaSN')) 
+	s1 = self.s.replace("@SERIAL_NUM@", self.serialNumber) 
 	self.getUnitInfoXML = s1.replace("@STATION_NAME@", self.STATION_NAME) 
-	if self.log:
-		self.log.Print('HTTP Send => '+self.getUnitInfoXML)
+	#if self.log:
+	#	self.log.Print('HTTP Send => '+self.getUnitInfoXML)
+	
+	print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx"
 	self.ConstructHead()
 	self.unitInfoResult = 2
 	self.unitInfoData = {}
@@ -80,24 +84,10 @@ class FFGetUnitInfo(TestBase):
 	self.requestor.endheaders()
 
     def Start(self):
-	if self.log:
-		self.log.Print(FFGetUnitInfo.section_str)
-	try:
-            self.BuildErrorTable()
+            #self.BuildErrorTable()
+	if True:
 	    self.Prepare()
 	    self.SendSOAP()
-	    self.Get()
-	    #self.config.Put('FFCPU',self.GetValue('CPUPN'))
-	    #self.config.Put('FFCPU','HW_CPU_6C_85W')
-        except Error, error:
-            errCode, errMsg = error
-	    if self.log:
-           	 self.log.Print('TestEnd => ErrorCode=%s: %s' % (errCode, errMsg))
-            return 'FAIL ErrorCode=%s: %s' % (errCode, errMsg)
-        else:
-	    if self.log:
-            	self.log.Print("TestChk=> PASS: FlexFlow Barcode Checking")
-	    return 'PASS'
 
     def Get(self):
 	for key in self.map.keys():
@@ -189,16 +179,12 @@ if __name__ == "__main__":
     if len( args ) != 1:
         sys.exit("Usage: FFGetUnitInfo.py SerailNumber")
 
-    config = Configure('/home/bft/SatiFT/BFTConfig.txt')
-    config.Put('PcbaSN', args[0])
-
     log = Log()
     log.Open('test.log')
 
     comm = None
-    eventManager = EventManager()
     #ffclient = FFGetUnitInfo(config, eventManager, log, comm)
-    ffclient = FFGetUnitInfo(config, None, None, None)
-    #ffclient = FFGetUnitInfo(config,  log, comm)
-    result = ffclient.Start()
+    ffclient = FFGetUnitInfo()
+    ffclient.serialNumber="J181601KL"
+    ffclient.Start()
     print result
