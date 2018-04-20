@@ -60,7 +60,7 @@ class SSHCommander:
     		self.password = self.cf.get("BootOS_Info", "boot_os_password")
 	def Login(self):
 		try:
-    			self.s.login (self.hostname, self.username, self.password, original_prompt='[$#>]')
+    			self.s.login (self.hostname, self.username, self.password, original_prompt='ROOT>')
 			return True
 		except pxssh.ExceptionPxssh, e:
     			print "pxssh failed on login. please check you with below step\n1,make sure you can ping %s.\n2,make sure you can login with username:%s password %s\n" %(self.hostname,self.username,self.password)
@@ -92,7 +92,7 @@ class  CINT:
 	    			serialNumber=raw_input ("please input serial number for slot %s:" %(j+1))	
 			
 				#to check the sn format
-				self.pattern= "J\w{8}$"
+				self.pattern= self.cf.get("FlexFlow_Info", "sn_re")
 		        	p = re.compile(self.pattern)
         			if p.match(serialNumber):
             				break
@@ -111,7 +111,9 @@ class  CINT:
 	    	#init test items
 	    	self.testItems = collections.OrderedDict()
 	    	self.testItems["Interposer_SpeedWithCheck"]="~/int/UTS_InterposerSpeedWithCheck.py -i %s"
+	    	self.testItems["Interposer_Switch1On"]="~/int/JYDAM1066.py -t dio -c 1 -a on"
 	    	self.testItems["Interposer_EthernetCheck1"]="~/int/UTS_InterposerEthernetCheck.py -b %s -i 10"
+	    	self.testItems["Interposer_Switch2On"]="~/int/JYDAM1066.py -t dio -c 2 -a on"
 	    	self.testItems["Interposer_EthernetCheck2"]="~/int/UTS_InterposerEthernetCheck.py -b %s -i 20"
 	    	self.testItems["Interposer_NvmeCheck"]="~/int/UTS_NvmeCheck.py -i %s -c 0"
 
@@ -155,7 +157,11 @@ class  CINT:
 	    		for (key,value) in self.testItems.items():
 	    			testItem=TestItem()
 	    			testItem.testName=key
-	    			testItem.testLog=self.sc.ExcuteCmd(value %j)
+				if value.find("%s")>=0:
+	    				testItem.testLog=self.sc.ExcuteCmd(value %j)
+				else:
+	    				testItem.testLog=self.sc.ExcuteCmd(value)
+					time.sleep(10)
 	    			if testItem.testLog.find("#f")>=0 or testItem.testLog.find("FAILED")>=0 or testItem.testLog.find("PASSED")<=0:
 	    				testItem.testResult=False
 	    				#if test result of test unit is true. make it false
@@ -163,6 +169,7 @@ class  CINT:
 	    					self.testUnits[j].testResult=False
 	    			else:
 	    				testItem.testResult=True
+				print ".",
 	    			self.testUnits[j].testItems.append(testItem)
 	    		#testUnits.append(testUnits[index])
 			j=j+1
@@ -209,11 +216,11 @@ class  CINT:
 	    			if testitem.testResult:
 	                			testUnit.log.Print("Tester => PASSED : %s Check Pass" %testitem.testName)
 	    			else:
-	                			testUnit.log.Print("Tester => FAILED : %s Check Pass" %testitem.testName)
+	                			testUnit.log.Print("Tester => FAILED : %s Check Fail" %testitem.testName)
 	    		
 	    		testUnit.log.Close()
 	    		testUnit.log.AddHeader_Long(header_complete_str,'%s/FTLog/%s/%s' %(home_dir, (testUnit.testResult and "PASS" or "FAIL"),testUnit.log_filename))
-		testReutsArray=["","","",""]
+		testReutsArray=["","","","","",""]
 	    	for testUnit in self.testUnits:
 			#show test slot/unit information
 	    		if testUnit.testResult:
