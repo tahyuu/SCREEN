@@ -4,6 +4,7 @@ import time
 import re
 import subprocess
 from optparse import OptionParser
+from MappingIndex import *
 
 
 class Command():
@@ -60,23 +61,45 @@ class Command():
 class UTS_NvmeCheck():
     section_str = "Section: NVME Check"
     def __init__(self,devicecount):
+	self.pci_buses=["af:00","b0:00","18:00","19:00"]
+	self.testIndex=""
+	self.bus_id=""
+        self.devicesPatt =  r'Disk\s+(?P<Name>/dev/\w+):'
+        self.patternDevices = re.compile(self.devicesPatt)
 	self.comm= Command()
 	self.devicecount=int(devicecount)
     def Start(self):
-        try:
+	if True:
 	    if self.FindNVMEDevices():
             	self.comm.uts_format('NVME Check PASS',"i")
 	    else:
             	self.comm.uts_format('NVME Check FAIL',"i")
+        try:
+		pass
         except Exception, exception:
             self.comm.uts_format('Exception=%s' % exception,"f")
 	
     def FindNVMEDevices(self):
-        self.comm.SendReturn("fdisk -l| grep nvm | grep -v Linux")
+	for mp in mapping_list:
+		if mp["slot_index"]==int(self.testIndex):
+			self.bus_id=mp["k2c_busid"]
+       	self.comm.SendReturn("fdisk -l | grep nvme")
 	line = self.comm.RecvTerminatedBy()
-	if line.count("nvme")==self.devicecount*2+1:
+	devices = re.findall(r"/dev/\w+",line)
+	nvme_driver_count=0
+	for device in devices:
+        	self.comm.SendReturn("udevadm info  --query=all --name=%s" %device)
+		sub_line = self.comm.RecvTerminatedBy()
+		if sub_line.find("0000:%s.0/nvme" %self.bus_id)>=0:
+			nvme_driver_count=nvme_driver_count+1
+		if sub_line.find("0000:%s.1/nvme" %self.bus_id)>=0:
+			nvme_driver_count=nvme_driver_count+1
+
+	if nvme_driver_count==2:
+		print "#i find 2 nvme for %s" %self.bus_id
 		return True 
 	else:
+		print "#i can't find 2 nvme for %s" %self.bus_id
 		return False
 	
 if __name__ == '__main__':
@@ -98,7 +121,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
 
-    test = UTS_NvmeCheck(options.cardcount)
+    test = UTS_NvmeCheck(int(options.cardcount))
+    test.testIndex=str(options.testindex)
     print "#i XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     print "#i current index is %s" %options.testindex
     print "#i XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"

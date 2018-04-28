@@ -5,6 +5,7 @@ from optparse import OptionParser
 import subprocess
 import re
 import time
+from MappingIndex import *
 
 
 class Command():
@@ -69,7 +70,8 @@ class UTS_InterposeEthernetCheck():
 	self.port1=""
 	self.port2=""
 	self.port3=""
-	self.busIds=["0000:af:00.2","0000:b0:00.2","0000:18:00.2","0000:19:00.2"]
+	#self.busIds=["0000:af:00.2","0000:b0:00.2","0000:18:00.2","0000:19:00.2"]
+	self.busIds=[]
 	self.device="ixgbe"
 	self.fw="0x800009fa"
 	self.comm= Command()
@@ -78,8 +80,23 @@ class UTS_InterposeEthernetCheck():
     def PrintF(self,string):
 	print "#f %s" %string
     def Start(self,busids,ipsegment):
+	mapping_list.sort(key=lambda x:x["slot_index"]) 
+	for mp in mapping_list:
+		if mp["k2c_busid"]=="":
+			self.busIds.append("0000:%s.2" %"Nnknow")
+		else:
+			self.busIds.append("0000:%s.2" %mp["k2c_busid"])
+	print self.busIds
+	#self.busIds[0]
+	#self.busIds[1]
+	#self.busIds[2]
+	#self.busIds[3]
+	print self.port0
+	print self.port1
+	print self.port2
+	print self.port3
 	self.PrintI(UTS_InterposeEthernetCheck.section_str)
-        try:
+	if True:
 	    testFlag=True
 	    self.FindEthDev()
 	    if ipsegment=="10":
@@ -128,6 +145,8 @@ class UTS_InterposeEthernetCheck():
 		self.PrintI("FAIL : Ping test fail")
 	    else:
 		self.PrintI("PASS: Ping test pass")
+        try:
+	    pass
         except Exception, error:
             self.PrintI('ERROR: %s\n' % str(error))
         else:
@@ -143,18 +162,20 @@ class UTS_InterposeEthernetCheck():
             line = self.comm.RecvTerminatedBy()
             if self.port0 != '' and self.port1 != '' and self.port2!='' and self.port3!='':
                break
-            if line.find(self.busIds[0]) > 0:
+            if len(self.busIds)>0 and line.find(self.busIds[0]) > 0:
 		self.port0 = ethdev.replace(":","")
 		continue	
-            if line.find(self.busIds[1]) > 0:
+            if len(self.busIds)>1 and line.find(self.busIds[1]) > 0 :
 		self.port1 = ethdev.replace(":","")
 		continue	
-            if line.find(self.busIds[2]) > 0:
+            if len(self.busIds)>2 and line.find(self.busIds[2]) > 0 :
 		self.port2 = ethdev.replace(":","")
 		continue	
-            if line.find(self.busIds[3]) > 0:
+            if len(self.busIds)>3 and line.find(self.busIds[3]) > 0 :
 		self.port3 = ethdev.replace(":","")
 		continue	
+	
+	
     def ConfigEthPort(self,EthName,NetWorkSegment):
 	if EthName=="":
 		return

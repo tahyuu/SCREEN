@@ -3,6 +3,7 @@
 import time
 import re
 import subprocess
+from MappingIndex import *
 from optparse import OptionParser
 
 class Command():
@@ -78,33 +79,41 @@ class UTS_InterposerSpeedWithCheck():
         self.patternLnkSta = re.compile(self.LnkStaPatt)
 	self.ErrorList=[]
 	self.comm= Command()
+	self.k2c_busid=""
     def PrintI(self,string):
 	print "#i %s" %string
     def PrintF(self,string):
 	print "#f %s" %string
 
-    def Start(self,busid):
+    def Start(self,index):
+	hasError=False
         try:
-	    if busid.find("0")>-1:
+	    for mp in mapping_list:
+		if mp["slot_index"]==int(index):
+			self.k2c_busid=mp["k2c_busid"]
+	    if self.k2c_busid.find("af")>-1:
 	    	self.CheckPciSpeedWidth(self.Int1_Storage1)
 	    	self.CheckPciSpeedWidth(self.Int1_Storage2)
 	    	self.CheckPciSpeedWidth(self.Int1_Ethernet)
-	    if busid.find("1")>-1:
+	    elif self.k2c_busid.find("b0")>-1:
 	    	self.CheckPciSpeedWidth(self.Int2_Storage1)
 	    	self.CheckPciSpeedWidth(self.Int2_Storage2)
 	    	self.CheckPciSpeedWidth(self.Int2_Ethernet)
-	    if busid.find("2")>-1:
+	    elif self.k2c_busid.find("18")>-1:
 	    	self.CheckPciSpeedWidth(self.Int3_Storage1)
 	    	self.CheckPciSpeedWidth(self.Int3_Storage2)
 	    	self.CheckPciSpeedWidth(self.Int3_Ethernet)
-	    if busid.find("3")>-1:
+	    elif self.k2c_busid.find("19")>-1:
 	    	self.CheckPciSpeedWidth(self.Int4_Storage1)
 	    	self.CheckPciSpeedWidth(self.Int4_Storage2)
 	    	self.CheckPciSpeedWidth(self.Int4_Ethernet)
-	    if len(self.ErrorList)==0:
-            	self.PrintI('PASS')
 	    else:
-            	self.PrintI('FAIL')
+		hasError=True
+            	self.PrintI('Can not find bus id for current index %s' %index)
+	    if len(self.ErrorList)==0 and (not hasError):
+            	self.PrintI('ALLPASS')
+	    else:
+            	self.PrintI('HASFAIL')
         except Exception, exception:
             self.PrintI('Exception=%s' % exception)
 
