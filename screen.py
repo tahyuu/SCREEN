@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os,  subprocess, time
 from Log import *
+import ConfigParser	
 from optparse import OptionParser
 import pexpect
 import commands
@@ -27,19 +28,23 @@ class bcolors:
 
 class CREEN():
     def __init__(self):
+        self.cf = ConfigParser.ConfigParser()
+        self.cf.read("config.ini")
         self.PROMPT = ">"
         self.bc=bcolors()
         self.mac_re="[0-9A-Fa-f]{12}$"
         self.sn_re="\w{9}$"
         self.temp_re="^(\-|\+)?\d+(\.\d+)?$"
         self.ip_re="((25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))"
-        self.bmc_username="admin"
-        self.bmc_password="admin"
+        self.dhcp_server=self.cf.get("DHCP", "dhcp_server")
+        self.bmc_username=self.cf.get("BMC", "bmc_user_name")
+        self.bmc_password=self.cf.get("BMC", "bmc_password")
         self.bmc_ip=""
         self.bmc_mac=""
         self.serial_number=""
         self.bmc_command_header="ipmitool -I lanplus -H %s -U %s -P %s %s"
-        self.pass_qut=0.15
+        self.pass_qut=self.cf.get("CHECK", "pass_margin")
+        self.bmc_ip_get_type=self.cf.get("BMC", "bmc_ip_get_type")
         
         self.PASS = '\n \
 ***************************************************\n \
@@ -97,21 +102,20 @@ class CREEN():
             #print stderr,
             self.log.PrintNoTime(stderr.rstrip())
             return stderr
-    def PingDHCPServer(self):
+    def PingHost(self,host):
         #step 1 ping dhcp server
-        self.dhcp_server="192.168.4.3"
         self.ping_wait=30
         while True:
-            backinfo = commands.getstatusoutput('ping -c 2 -w %s %s'%(self.ping_wait,self.dhcp_server))
+            backinfo = commands.getstatusoutput('ping -c 2 -w %s %s'%(self.ping_wait,host))
             print backinfo[1]
             if backinfo[1].find(", 0% packet loss")<0:
-                print self.bc.BGFAIL("make sure you can ping %s.\n" %(self.dhcp_server))
+                print self.bc.BGFAIL("make sure you can ping %s.\n" %(host))
                 #sys.exit(0)
             else:
                 break
     def GetDHCPIPAddress(self):
         #step 1 copy dhcp.release
-        command ="scp -rq dhcp@192.168.4.3:dhcpd.leases /u2/utssrc/SCREEN/dhcpd.leases"
+        command ="scp -rq dhcp@%s:dhcpd.leases /u2/utssrc/SCREEN/dhcpd.leases" %self.dhcp_server
         child = pexpect.spawn(command)
         index = child.expect(["(?i)password", pexpect.EOF, pexpect.TIMEOUT])
         child.sendline("dhcp")
@@ -144,12 +148,20 @@ class CREEN():
             if p.match(serial_number):
                 self.serial_number=serial_number
                 break
-        while True:
-            bmc_mac = raw_input("  Please Input MAC Address : ")
-            p = re.compile(self.mac_re)
-            if p.match(bmc_mac):
-                self.bmc_mac=":".join(re.findall("[0-9a-fA-F]{2}",bmc_mac))
-                break
+        if self.bmc_ip_get_type=="0":
+            while True:
+                bmc_mac = raw_input("  Please Input MAC Address : ")
+                p = re.compile(self.mac_re)
+                if p.match(bmc_mac):
+                    self.bmc_mac=":".join(re.findall("[0-9a-fA-F]{2}",bmc_mac))
+                    break
+        else:
+            while True:
+                bmc_ipaddress = raw_input("Please Input MAC IP Address : ")
+                p = re.compile(self.ip_re)
+                if p.match(bmc_ipaddress):
+                    self.bmc_ip=bmc_ipaddress 
+                    break
         self.log_filename = serial_number + \
          '-' + datetime.now().strftime("%Y%m%d%H%M%S") + '.log'
         self.log.Open(home_dir + '//FTLog//TMP//' + self.log_filename)
@@ -164,12 +176,15 @@ class CREEN():
         ########################################
         #to get dchp ipaddress for current mac
         ########################################
-        self.PingDHCPServer()
-        while True:
-            if self.GetDHCPIPAddress():
-                break
-            else:
-                time.sleep(5)
+        if self.bmc_ip_get_type=="0":
+            self.PingHost(self.dhcp_server)
+            while True:
+                if self.GetDHCPIPAddress():
+                    break
+                else:
+                    time.sleep(5)
+        else:
+            self.PingHost(self.bmc_ip)
         self.ErrorList=[]
         ########################################
         #to get  check AMB Temperature
@@ -186,6 +201,7 @@ class CREEN():
             print self.bc.BGPASS(self.PASS)
             movePASS='mv ' + home_dir + '/FTLog/TMP/' + self.log_filename + \
                    ' ' + home_dir + '/FTLog/PASS/' + self.log_filename
+            print self.bc.BGPASS(home_dir + '/FTLog/PASS/' + self.log_filename)
             os.system(movePASS)
         else:
             self.log.PrintNoTime("")
@@ -196,6 +212,7 @@ class CREEN():
             print self.bc.BGFAIL(self.FAIL)
             moveFAIL='mv ' + home_dir + '/FTLog/TMP/' + self.log_filename + \
                    ' ' + home_dir + '/FTLog/FAIL/' + self.log_filename
+            self.bc.BGFAIL(home_dir + '/FTLog/FAIL/' + self.log_filename)
             os.system(moveFAIL)
             
 
@@ -228,16 +245,16 @@ class CREEN():
         real_temp=float(int(test.replace(" ","")[:3],16))/16
         self.log.Print("SYS_AMB_TEMP_%s raw data is[ %s ]; temperature in IC is [ %s degrees C ]; temperature sensor read value is [%s degrees C]" %(amb_index,test,real_temp,str_amb_temp))
         amb_temp=float(str_amb_temp)
-        if amb_temp*(1-self.pass_qut) < real_temp and real_temp<amb_temp*(1+self.pass_qut):
-            self.log.Print("SYS_AMB_TEMP_%s temperature [ %s degrees C] is in range [ %s degrees C,%s degrees C]" %(amb_index,real_temp,amb_temp*(1-self.pass_qut),amb_temp*(1+self.pass_qut)))
+        if amb_temp-int(self.pass_qut) < real_temp and real_temp<amb_temp+int(self.pass_qut):
+            self.log.Print("SYS_AMB_TEMP_%s temperature [ %s degrees C] is in range [ %s degrees C,%s degrees C]" %(amb_index,real_temp,amb_temp-int(self.pass_qut),amb_temp+int(self.pass_qut)))
             self.log.Print("AMB_%s test PASSED" %amb_index)
-            print self.bc.BGPASS("AMB_%s test PASSED" %amb_index)
+            print self.bc.BGPASS("PASSED: SYS_AMB_TEMP_%s temperature [ %s degrees C] is in range [ %s degrees C,%s degrees C]" %(amb_index,real_temp,amb_temp-int(self.pass_qut),amb_temp+int(self.pass_qut)))
             return True
         else:
-            self.log.Print("SYS_AMB_TEMP_%s temperature [ %s degrees C] is out of range [ %s degrees C,%s degrees C]" %(amb_index,real_temp,amb_temp*(1-self.pass_qut),amb_temp*(1+self.pass_qut)))
+            self.log.Print("SYS_AMB_TEMP_%s temperature [ %s degrees C] is out of range [ %s degrees C,%s degrees C]" %(amb_index,real_temp,amb_temp-int(self.pass_qut),amb_temp+int(self.pass_qut)))
             self.log.Print("AMB_%s test FAILED" %amb_index)
             self.ErrorList.append("SYS_AMB_TEMP_%s" %amb_index)
-            print self.bc.BGFAIL("AMB_%s test FAILED" %amb_index)
+            print self.bc.BGFAIL("FAILED: SYS_AMB_TEMP_%s temperature [ %s degrees C] is out of range [ %s degrees C,%s degrees C]" %(amb_index,real_temp,amb_temp-int(self.pass_qut),amb_temp+int(self.pass_qut)))
             return False
         
 if __name__=="__main__":
