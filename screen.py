@@ -138,7 +138,7 @@ class CREEN():
         ########################################
         #to create test log and ask SN and MAC
         ########################################
-        home_dir = "//u2//utssrc//SCREEN"
+        home_dir = os.getcwd()
         self.testDate = datetime.now().strftime("%Y/%m/%d")
         serial_number=""
         bmc_mac=""
