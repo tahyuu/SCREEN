@@ -117,7 +117,7 @@ class CREEN():
         child.sendline("dhcp")
         child.read()
         
-        #step 3 get ipaddress from dhcp release
+        #step 2 get ipaddress from dhcp release
         command="list_dhcp_leases --lease dhcpd.leases | grep -i '%s'" %self.bmc_mac
         self.SendReturn(command)
         str_ipaddr =self.RecvTerminatedBy()
