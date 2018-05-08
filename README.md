@@ -27,5 +27,5 @@
   after that you need input Serial Number, BMC MAC, Thermal part temp<br>
 * Where is test log.<br>
   you can find test log in SCREEN/TestLog/.
-  you can also find the test result summry 
+  you can also find the test result summry in SCREEN/data.csv
   
