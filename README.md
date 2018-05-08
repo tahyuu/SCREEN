@@ -11,7 +11,7 @@
     you can install the dhcp service in test pc or another pc.
 * How to get the program<br>
   ```
-  git clone git@github.com:tahyuu.screen.git SCREEN
+  git clone git@github.com:tahyuu/SCREEN.git SCREEN
   ```
 * How to Config the program.
   * copy the file /SCREEN/bin/list_dhcp_release to /bin<br>
