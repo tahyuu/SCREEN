@@ -40,6 +40,7 @@ class SCREEN():
         self.dhcp_server=self.cf.get("DHCP", "dhcp_server")
         self.bmc_username=self.cf.get("BMC", "bmc_user_name")
         self.bmc_password=self.cf.get("BMC", "bmc_password")
+        self.wait_time=int(self.cf.get("CHECK", "wait_time"))
         self.bmc_ip=""
         self.bmc_mac=""
         self.serial_number=""
@@ -214,11 +215,26 @@ class SCREEN():
             moveFAIL='mv ' + self.home_dir + '/FTLog/TMP/' + self.log_filename + \
                    ' ' + self.home_dir + '/FTLog/FAIL/' + self.log_filename
             self.bc.BGFAIL(self.home_dir + '/FTLog/FAIL/' + self.log_filename)
+            print self.bc.BGFAIL(self.home_dir + '/FTLog/FAIL/' + self.log_filename)
             os.system(moveFAIL)
     def Run2(self):
         self.AMBTest(0,False) 
         self.AMBTest(1,False) 
         self.AMBTest(4,False)
+    def Wait(self,seconds):
+        count=0
+        while (count < seconds):
+            ncount = seconds - count
+            sys.stdout.write("\r            %d " % ncount)
+            sys.stdout.flush()
+            time.sleep(1)
+            count += 1
+        while True:
+            yes_no= raw_input("\nDo you want to start test[y/n]? : ")
+            if str.upper(yes_no)=="Y" or str.upper(yes_no)=="YES":
+                break
+            else:
+                pass
             
 
     def AMBTest(self,amb_index,askInput):
@@ -274,6 +290,7 @@ if __name__=="__main__":
     while True:
         cre=SCREEN(0)
         cre.ScanData()
+        cre.Wait(cre.wait_time)
         cre.InitLog()
         cre.GetIpaddres()
         cre.Run()
