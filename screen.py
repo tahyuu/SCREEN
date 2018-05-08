@@ -256,7 +256,7 @@ class SCREEN():
         self.amb_sensores["amb%s_real_temp" %amb_index]=str_amb_temp
         self.log.Print("SYS_AMB_TEMP_%s raw data is[ %s ]; temperature in IC is [ %s degrees C ]; temperature sensor read value is [%s degrees C]" %(amb_index,test,real_temp,str_amb_temp))
         amb_temp=float(str_amb_temp)
-        if amb_temp-int(self.pass_qut) < real_temp and real_temp<amb_temp+int(self.pass_qut):
+        if amb_temp-int(self.pass_qut) <= real_temp and real_temp<=amb_temp+int(self.pass_qut):
             self.log.Print("SYS_AMB_TEMP_%s temperature [ %s degrees C] is in range [ %s degrees C,%s degrees C]" %(amb_index,real_temp,amb_temp-int(self.pass_qut),amb_temp+int(self.pass_qut)))
             self.log.Print("AMB_%s test PASSED" %amb_index)
             print self.bc.BGPASS("PASSED: SYS_AMB_TEMP_%s temperature [ %s degrees C] is in range [ %s degrees C,%s degrees C]" %(amb_index,real_temp,amb_temp-int(self.pass_qut),amb_temp+int(self.pass_qut)))
@@ -284,6 +284,6 @@ if __name__=="__main__":
             write_str=write_str+str(cre.amb_sensores["amb%s_read_raw_data" %amb_index])+","
             write_str=write_str+str(cre.amb_sensores["amb%s_read_temp" %amb_index])+","
             write_str=write_str+str(cre.amb_sensores["amb%s_real_temp" %amb_index])+","
-            write_str=write_str+str(cre.amb_sensores["amb%s_real_temp" %amb_index]-cre.amb_sensores["amb%s_read_temp" %amb_index])+","
+            write_str=write_str+str(float(cre.amb_sensores["amb%s_real_temp" %amb_index])-float(cre.amb_sensores["amb%s_read_temp" %amb_index]))+","
         log.PrintNoTime(write_str.strip(","))
             
