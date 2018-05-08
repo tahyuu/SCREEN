@@ -46,7 +46,6 @@ class SCREEN():
         self.bmc_command_header="ipmitool -I lanplus -H %s -U %s -P %s %s"
         self.pass_qut=self.cf.get("CHECK", "pass_margin")
         self.bmc_ip_get_type=self.cf.get("BMC", "bmc_ip_get_type")
-        self.amb_sensores={}
         
         self.PASS = '\n \
 ***************************************************\n \
@@ -136,32 +135,35 @@ class SCREEN():
             print self.bc.BGFAIL("can't find mac [%s] in dhcp.release will try later." %(self.bmc_mac))
             return False
         
-    def ScanData(self):
+    def Init(self):
         ########################################
         #to create test log and ask SN and MAC
         ########################################
+        self.home_dir = os.getcwd()
+        self.testDate = datetime.now().strftime("%Y/%m/%d")
+        serial_number=""
+        bmc_mac=""
         while True:
-            self.serial_number = raw_input("Please Input Serial Number : ")
+            serial_number = raw_input("Please Input Serial Number : ")
             p = re.compile(self.sn_re)
-            if p.match(self.serial_number):
+            if p.match(serial_number):
+                self.serial_number=serial_number
                 break
         if self.bmc_ip_get_type=="0":
             while True:
-                self.bmc_mac = raw_input("  Please Input MAC Address : ")
+                bmc_mac = raw_input("  Please Input MAC Address : ")
                 p = re.compile(self.mac_re)
-                if p.match(self.bmc_mac):
-                    self.bmc_mac=":".join(re.findall("[0-9a-fA-F]{2}",self.bmc_mac))
+                if p.match(bmc_mac):
+                    self.bmc_mac=":".join(re.findall("[0-9a-fA-F]{2}",bmc_mac))
                     break
         else:
             while True:
-                self.bmc_ip= raw_input("Please Input MAC IP Address : ")
+                bmc_ipaddress = raw_input("Please Input MAC IP Address : ")
                 p = re.compile(self.ip_re)
-                if p.match(self.bmc_ip):
+                if p.match(bmc_ipaddress):
+                    self.bmc_ip=bmc_ipaddress 
                     break
-    def InitLog(self):
-        self.testDate = datetime.now().strftime("%Y/%m/%d")
-        self.home_dir = os.getcwd()
-        self.log_filename = self.serial_number + \
+        self.log_filename = serial_number + \
          '-' + datetime.now().strftime("%Y%m%d%H%M%S") + '.log'
         self.log.Open(self.home_dir + '//FTLog//TMP//' + self.log_filename)
         self.log.PrintNoTime('')
@@ -190,9 +192,9 @@ class SCREEN():
         ########################################
         #to get  check AMB Temperature
         ########################################
-        self.AMBTest(0,True) 
-        self.AMBTest(1,True) 
-        self.AMBTest(4,True)
+        self.AMBTest(0) 
+        self.AMBTest(1) 
+        self.AMBTest(4)
         if len(self.ErrorList)==0:
             self.log.PrintNoTime("")
             self.log.PrintNoTime("")
@@ -215,13 +217,9 @@ class SCREEN():
                    ' ' + self.home_dir + '/FTLog/FAIL/' + self.log_filename
             self.bc.BGFAIL(self.home_dir + '/FTLog/FAIL/' + self.log_filename)
             os.system(moveFAIL)
-    def Run2(self):
-        self.AMBTest(0,False) 
-        self.AMBTest(1,False) 
-        self.AMBTest(4,False)
             
 
-    def AMBTest(self,amb_index,askInput):
+    def AMBTest(self,amb_index):
         #commmand for get AMB0 
         if amb_index==0:
             amb_address="92"
@@ -238,22 +236,16 @@ class SCREEN():
         self.log.Print("AMB_%s test section" %amb_index)
         self.log.Print("********************************************************")
         amb_cmd="raw 0x06 0x52 0x0d 0x%s 0x02 0x00" %amb_address
-        if askInput:
-            while True:
-                str_amb_temp= raw_input("Please input AMB %s Sensor Temperature : " %amb_index)
-                p = re.compile("^(\-|\+)?\d+(\.\d+)?$")
-                if p.match(str_amb_temp):
-                    break
-        else:
-            str_amb_temp="30"
+        while True:
+            str_amb_temp= raw_input("Please input AMB %s Sensor Temperature : " %amb_index)
+            p = re.compile("^(\-|\+)?\d+(\.\d+)?$")
+            if p.match(str_amb_temp):
+                break
 
         command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,amb_cmd)
         self.SendReturn(command)
         test=self.RecvTerminatedBy().strip()
-        real_temp=float(int(test.replace(" ","")[:2]+"0",16))/16
-        self.amb_sensores["amb%s_read_raw_data" %amb_index]=test
-        self.amb_sensores["amb%s_read_temp" %amb_index]=real_temp
-        self.amb_sensores["amb%s_real_temp" %amb_index]=str_amb_temp
+        real_temp=float(int(test.replace(" ","")[:3],16))/16
         self.log.Print("SYS_AMB_TEMP_%s raw data is[ %s ]; temperature in IC is [ %s degrees C ]; temperature sensor read value is [%s degrees C]" %(amb_index,test,real_temp,str_amb_temp))
         amb_temp=float(str_amb_temp)
         if amb_temp-int(self.pass_qut) < real_temp and real_temp<amb_temp+int(self.pass_qut):
@@ -269,21 +261,8 @@ class SCREEN():
             return False
         
 if __name__=="__main__":
-    log=Log()
-    log.Open3('data.csv')
     while True:
         cre=SCREEN(0)
-        cre.ScanData()
-        cre.InitLog()
+        cre.Init()
         cre.GetIpaddres()
         cre.Run()
-        write_str=""
-        #write_str="serial_number,amb_0_ic_raw,amb_0_ic_read_temp,amb_0_ic_real_temp,amb_0_differ,amb_1_ic_raw,amb_1_ic_read_temp,amb_1__ic_real_temp,amb_1_differ,amb_4_ic_raw,amb_4_ic_read_temp,amb_4_ic_real_temp,amb_4_differ\n"
-        write_str=write_str+cre.serial_number+","
-        for amb_index in [0,1,4]:
-            write_str=write_str+str(cre.amb_sensores["amb%s_read_raw_data" %amb_index])+","
-            write_str=write_str+str(cre.amb_sensores["amb%s_read_temp" %amb_index])+","
-            write_str=write_str+str(cre.amb_sensores["amb%s_real_temp" %amb_index])+","
-            write_str=write_str+str(cre.amb_sensores["amb%s_real_temp" %amb_index]-cre.amb_sensores["amb%s_read_temp" %amb_index])+","
-        log.PrintNoTime(write_str.strip(","))
-            

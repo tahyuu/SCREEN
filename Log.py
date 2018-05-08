@@ -36,6 +36,10 @@ class Log:
 	self.filename=filename
 	self._fd = open(filename, "w+")
 
+    def Open3(self, filename):
+	self.filename=filename
+	self._fd = open(filename, "a+")
+
     def Open2(self, filename):
 	self._fd2 = open(filename, "w+")
 
