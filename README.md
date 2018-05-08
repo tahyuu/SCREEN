@@ -18,9 +18,14 @@
     ```
     copy /SCREEN/bin/list_dhcp_release /bin
     ```
+    
 * How to run the program
   ```
   cd SCREEN
   ./screen.py
   ```
+  after that you need input Serial Number, BMC MAC, Thermal part temp<br>
+* Where is test log.<br>
+  you can find test log in SCREEN/TestLog/.
+  you can also find the test result summry 
   
