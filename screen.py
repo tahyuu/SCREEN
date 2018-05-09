@@ -161,6 +161,7 @@ class SCREEN():
                     break
     def InitLog(self):
         self.testDate = datetime.now().strftime("%Y/%m/%d")
+        self.testStartTime = datetime.now().strftime("%Y/%m/%d %H:%M")
         self.home_dir = os.getcwd()
         self.log_filename = self.serial_number + \
          '-' + datetime.now().strftime("%Y%m%d%H%M%S") + '.log'
@@ -195,6 +196,7 @@ class SCREEN():
         self.AMBTest(1,True) 
         self.AMBTest(4,True)
         if len(self.ErrorList)==0:
+            self.testStatus=True
             self.log.PrintNoTime("")
             self.log.PrintNoTime("")
             self.log.Print("********************************************************")
@@ -206,6 +208,7 @@ class SCREEN():
             print self.bc.BGPASS(self.home_dir + '/FTLog/PASS/' + self.log_filename)
             os.system(movePASS)
         else:
+            self.testStatus=False
             self.log.PrintNoTime("")
             self.log.PrintNoTime("")
             self.log.Print("********************************************************")
@@ -285,8 +288,6 @@ class SCREEN():
             return False
         
 if __name__=="__main__":
-    log=Log()
-    log.Open3('data.csv')
     while True:
         cre=SCREEN(0)
         cre.ScanData()
@@ -296,11 +297,15 @@ if __name__=="__main__":
         cre.Run()
         write_str=""
         #write_str="serial_number,amb_0_ic_raw,amb_0_ic_read_temp,amb_0_ic_real_temp,amb_0_differ,amb_1_ic_raw,amb_1_ic_read_temp,amb_1__ic_real_temp,amb_1_differ,amb_4_ic_raw,amb_4_ic_read_temp,amb_4_ic_real_temp,amb_4_differ\n"
+        write_str=write_str+cre.testStartTime+","
         write_str=write_str+cre.serial_number+","
         for amb_index in [0,1,4]:
             write_str=write_str+str(cre.amb_sensores["amb%s_read_raw_data" %amb_index])+","
             write_str=write_str+str(cre.amb_sensores["amb%s_read_temp" %amb_index])+","
             write_str=write_str+str(cre.amb_sensores["amb%s_real_temp" %amb_index])+","
             write_str=write_str+str(float(cre.amb_sensores["amb%s_real_temp" %amb_index])-float(cre.amb_sensores["amb%s_read_temp" %amb_index]))+","
+        write_str=write_str+(cre.testStatus and "pass" or "fail")
+        log=Log()
+        log.Open3('data.csv')
         log.PrintNoTime(write_str.strip(","))
             
