@@ -29,3 +29,13 @@
   you can find test log in SCREEN/TestLog/.
   you can also find the test result summry in SCREEN/data.csv
   
+  
+* How to install NI-VISA
+```
+mount -o loop NI-VISA-17.0.0.iso NI
+yum install libstdc++
+yum install glibc.i686
+yum install libstdc++.i686
+./INSTALL
+```
+  
