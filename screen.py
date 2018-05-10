@@ -269,7 +269,7 @@ class SCREEN():
         command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,amb_cmd)
         self.SendReturn(command)
         test=self.RecvTerminatedBy().strip()
-        real_temp=float(int(test.replace(" ","")[:2]+"0",16))/16
+        real_temp=float(int(test.replace(" ","")[:3],16))/16
         self.amb_sensores["amb%s_read_raw_data" %amb_index]=test
         self.amb_sensores["amb%s_read_temp" %amb_index]=real_temp
         self.amb_sensores["amb%s_real_temp" %amb_index]=str_amb_temp
