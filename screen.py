@@ -32,12 +32,16 @@ class SCREEN():
         self.cf.read("config.ini")
         self.PROMPT = ">"
         self.bc=bcolors()
+        self.home_dir = os.getcwd()
         self.testIndex=index
         self.mac_re="[0-9A-Fa-f]{12}$"
         self.sn_re="\w{9}$"
         self.temp_re="^(\-|\+)?\d+(\.\d+)?$"
         self.ip_re="((25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))"
         self.dhcp_server=self.cf.get("DHCP", "dhcp_server")
+        self.dhcp_leases_root=self.cf.get("DHCP", "dhcp_leases_root")
+        self.dhcp_username=self.cf.get("DHCP", "dhcp_user_name")
+        self.dhcp_password=self.cf.get("DHCP", "dhcp_password")
         self.bmc_username=self.cf.get("BMC", "bmc_user_name")
         self.bmc_password=self.cf.get("BMC", "bmc_password")
         self.wait_time=int(self.cf.get("CHECK", "wait_time"))
@@ -118,14 +122,15 @@ class SCREEN():
                 break
     def GetDHCPIPAddress(self):
         #step 1 copy dhcp.release
-        command ="scp -rq dhcp@%s:dhcpd.leases /u2/utssrc/SCREEN/dhcpd.leases" %self.dhcp_server
+        command ="scp -rq -o StrictHostKeyChecking=no %s@%s:%s dhcpd.leases" %(self.dhcp_username,self.dhcp_server,self.dhcp_leases_root)
         child = pexpect.spawn(command)
         index = child.expect(["(?i)password", pexpect.EOF, pexpect.TIMEOUT])
-        child.sendline("dhcp")
+        child.sendline("%s" %self.dhcp_password)
         child.read()
-        
+       
         #step 2 get ipaddress from dhcp release
-        command="list_dhcp_leases --lease dhcpd.leases | grep -i '%s'" %self.bmc_mac
+        command="./list_dhcp_leases --lease dhcpd.leases | grep -i '%s'" %self.bmc_mac
+	print command
         self.SendReturn(command)
         str_ipaddr =self.RecvTerminatedBy()
         p = re.compile(self.ip_re)
@@ -148,7 +153,7 @@ class SCREEN():
                 break
         if self.bmc_ip_get_type=="0":
             while True:
-                self.bmc_mac = raw_input("  Please Input MAC Address : ")
+                self.bmc_mac = raw_input("  Please Input MAC Address : ").replace(":","")
                 p = re.compile(self.mac_re)
                 if p.match(self.bmc_mac):
                     self.bmc_mac=":".join(re.findall("[0-9a-fA-F]{2}",self.bmc_mac))
@@ -162,7 +167,6 @@ class SCREEN():
     def InitLog(self):
         self.testDate = datetime.now().strftime("%Y/%m/%d")
         self.testStartTime = datetime.now().strftime("%Y/%m/%d %H:%M")
-        self.home_dir = os.getcwd()
         self.log_filename = self.serial_number + \
          '-' + datetime.now().strftime("%Y%m%d%H%M%S") + '.log'
         self.log.Open(self.home_dir + '//FTLog//TMP//' + self.log_filename)
