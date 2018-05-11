@@ -32,10 +32,11 @@
   
 * How to install NI-VISA
 ```
+yum -y install libstdc++
+yum -y install glibc.i686
+yum -y install libstdc++.i686
+mkdir NI
 mount -o loop NI-VISA-17.0.0.iso NI
-yum install libstdc++
-yum install glibc.i686
-yum install libstdc++.i686
 ./INSTALL
 ```
   
