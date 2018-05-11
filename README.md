@@ -28,10 +28,14 @@
       ```
       
 * How to get the program<br>
+ please note that if you already get the program when you install dhcp server. please ignore it.
   ```
   git clone git@github.com:tahyuu/SCREEN.git SCREEN
   ```
-    
+
+* Config the program.<br>
+  you can config the progam via ~/SCREEN/config.ini. for more detail please open ~/SCREEN/config.ini.
+      
 * How to run the program
   ```
   cd ~/SCREEN
@@ -40,12 +44,9 @@
   after that you need input Serial Number, BMC MAC, Thermal part temp<br> the program wil start
 
 
-* Config the program.
-  you can config the progam via ~/SCREEN/config.ini. for more detail please open ~/SCREEN/config.ini.
-  
 * Where is test log.<br>
   you can find test log in SCREEN/TestLog/.
-  you can also find the test result summry in SCREEN/data.csv
+  you can also find the test result summry in SCREEN/data.csv<br><br><br><br><br><br><br><br><br>
   
 <font color="#FF0000">##################################################################################<br>
 below install is prepare for auto 34970A read. not ready now. you can ignore below<br>
