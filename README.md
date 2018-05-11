@@ -3,9 +3,18 @@
 ### System and enviroment.
 * system
   * this program run on linux
+  we are using centos 1804. please download the os image from below link<br>
+  http://isoredirect.centos.org/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1804.iso
 * requirements
   * pexpect<br>
       pexpect is requried. due to we need pexpect to connect dhcp server to get dhcp_release list.
+      you can follow below command to install pexpect
+      ```
+      yum -y install epel-release
+      yum -y install python-pip
+      pip install --upgrade pip
+      pip install pexpect
+      ```
   * dhcp<br>
       in this program we will use dhcp service. so that we can get the test unit ipaddress via mac.<br>
     you can install the dhcp service in test pc or another pc.
@@ -29,7 +38,9 @@
   you can find test log in SCREEN/TestLog/.
   you can also find the test result summry in SCREEN/data.csv
   
-  
+<font color="#FF0000">##################################################################################<br>
+below install is prepare for auto 34970A read. not ready now. you can ignore below<br>
+##################################################################################<br></font>
 * How to install NI-VISA
 ```
 ####################
