@@ -32,9 +32,22 @@
   
 * How to install NI-VISA
 ```
+####################
+#update kernel
+####################
+cd /root/SCREEN/Install/rpm_file
+yum -y install kernel-lt-4*
+yum -y install kernel-lt-devel-4*
+####################
+#install libstdc++
+####################
 yum -y install libstdc++
 yum -y install glibc.i686
 yum -y install libstdc++.i686
+####################
+#install NI VISA
+####################
+cd /root/SCREEN/Install
 mkdir NI
 mount -o loop NI-VISA-17.0.0.iso NI
 ./INSTALL
