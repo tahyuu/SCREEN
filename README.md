@@ -7,7 +7,7 @@
   http://isoredirect.centos.org/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1804.iso
 * requirements
   * pexpect<br>
-      pexpect is requried. due to we need pexpect to connect dhcp server to get dhcp_release list.
+      pexpect is requried. due to we need pexpect to connect dhcp server to get dhcp_leases list.
       you can follow below command to install pexpect
       ```
       yum -y install epel-release
