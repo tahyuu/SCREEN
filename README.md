@@ -50,7 +50,7 @@
   cd ~/SCREEN
   ./screen.py
   ```
-  after that you need input Serial Number, BMC MAC, Thermal part temp<br> the program wil start
+  after that you need input Serial Number, BMC MAC, Thermal part temp<br> the program wil start. for more information you can see the SOP/
 
 
 * Where is test log.<br>
