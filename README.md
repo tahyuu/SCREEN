@@ -1,13 +1,20 @@
 ## SCREEN Test
 
 ### System and enviroment.
+
+* HardWare List.<br>
+  1, PC with Eth port as Tester.<br>
+  2, PC with Eth Port as DHCP Server. you an also use One PC as DHCP sever and also as Tester.<br>
+  3, Switch.<br>
+  4, Eth Cable.<br>
+  
 * Hareware config. you can reference below image
 ![Image text](https://github.com/tahyuu/SCREEN/blob/master/SOP/HarwareConfig.png)
-* system
+* [Tester/DHPC SERVER]system
   * this program run on linux
   we are using centos 1804. please download the os image from below link<br>
   http://isoredirect.centos.org/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1804.iso
-* requirements
+* [TESTER]system requirements
   * pexpect<br>
       pexpect is requried. due to we need pexpect to connect dhcp server to get dhcp_leases list.
       you can follow below command to install pexpect
@@ -17,7 +24,7 @@
       pip install --upgrade pip
       pip install pexpect
       ```
-  * dhcp<br>
+  * How to setup dhcp server<br>
       in this program we will use dhcp service. so that we can get the test unit ipaddress via mac.<br>
     you can install the dhcp service in test pc or another pc.
       you can config a dhcp server as below step. first of all make sure you can access the internet. then excute below command.
