@@ -4,7 +4,7 @@
 
 * HardWare List.<br>
   1, PC with Eth port as Tester.<br>
-  2, PC with Eth Port as DHCP Server. you an also use One PC as DHCP sever and also as Tester.<br>
+  2, PC with Eth Port as DHCP Server. you an also use One PC as DHCP sever and also as Tester. below hardware config is based assuming that the DHCP server and Tester are one PC.<br>
   3, Switch.<br>
   4, Eth Cable.<br>
   
