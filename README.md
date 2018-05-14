@@ -1,6 +1,8 @@
 ## SCREEN Test
 
 ### System and enviroment.
+* Hareware config. you can reference below image
+
 * system
   * this program run on linux
   we are using centos 1804. please download the os image from below link<br>
