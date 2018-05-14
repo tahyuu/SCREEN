@@ -45,6 +45,8 @@ class SCREEN():
         self.bmc_username=self.cf.get("BMC", "bmc_user_name")
         self.bmc_password=self.cf.get("BMC", "bmc_password")
         self.wait_time=int(self.cf.get("CHECK", "wait_time"))
+        self.input_temp_high=float(self.cf.get("CHECK", "input_temp_high"))
+        self.input_temp_low=float(self.cf.get("CHECK", "input_temp_low"))
         self.bmc_ip=""
         self.bmc_mac=""
         self.serial_number=""
@@ -282,7 +284,12 @@ class SCREEN():
                 str_amb_temp= raw_input("Please input AMB %s Sensor Temperature : " %amb_index)
                 p = re.compile("^(\-|\+)?\d+(\.\d+)?$")
                 if p.match(str_amb_temp):
-                    break
+		    if float(str_amb_temp)<=self.input_temp_high and self.input_temp_low<=float(str_amb_temp):
+                    	break
+		    else:
+            	    	print self.bc.BGFAIL("input temp not in range [%s, %s]" %(self.input_temp_low,self.input_temp_high))
+		else:
+            	    print self.bc.BGFAIL("please input correct digital")
         else:
             str_amb_temp="30"
 
