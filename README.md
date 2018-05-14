@@ -43,8 +43,32 @@
   ```
 
 * Config the program.<br>
-  you can config the progam via ~/SCREEN/config.ini. for more detail please open ~/SCREEN/config.ini.
-      
+  you can config the progam via ~/SCREEN/config.ini. for more detail please open ~/SCREEN/config.ini.<br>
+  update it as follow in DHCP section.<br>
+  
+```python
+  [DHCP]
+#config the dhcp server ip. if the dhcp server is localhost we will read file from localhost.
+##############################################################
+# below dhcp config is for zhuhai site
+##############################################################
+#dhcp_server=            192.168.4.3
+#dhcp_leases_root=           "~/dhcpd.leases"
+#dhcp_user_name=         dhcp
+#dhcp_password=          dhcp
+##############################################################
+# below dhcp config is for US 
+# assuming that the dhcp server is the tester it is self, so config the dhcp_server to localhost.
+# assuming that the dhcp user name and password are boot and 123456. please update it according
+# assuming dhcpd.leases is in /var/lib/dhcpd/dhcpd.leases
+##############################################################
+dhcp_server=           localhost
+dhcp_leases_root=      /var/lib/dhcpd/dhcpd.leases
+dhcp_user_name=        root
+dhcp_password=         123456
+```
+  
+  
 * How to run the program
   ```
   cd ~/SCREEN
