@@ -1,0 +1,141 @@
+#!/usr/bin/perl
+#
+# Shows current leases.
+#
+# THIS SCRIPT IS PUBLIC DOMAIN, NO RIGHTS RESERVED!
+#
+use strict;
+use warnings;
+use POSIX qw(strftime);
+
+my $LEASES = 'dhcpd.leases';
+my @all_leases;
+my @leases;
+
+my %data;
+
+my $opt_format = 'human';
+my $opt_keep = 'active';
+
+our $total_leases = 0;
+
+## Read current leases file into array.
+sub read_dhcpd_leases() {
+    open(F, $LEASES) or die("Cannot open $LEASES: $!");
+    my $content = join('', <F>);
+    close(F);
+    @all_leases = split(/lease/, $content);
+
+    foreach my $lease (@all_leases) {
+        if ($lease =~ /^\s+([\.\d]+)\s+{.*starts \d+ ([\/\d\ \:]+);.*ends \d+ ([\/\d\ \:]+);.*ethernet ([a-f0-9:]+);/s) {
+            ++$total_leases;
+       }
+    }
+}
+
+## Add manufactor name and sort out obsolet assignements.
+sub process_leases() {
+    my $gm_now = strftime("%Y/%m/%d %H:%M:%S", gmtime());
+    my %tmp_leases; # for sorting and filtering
+
+    my $counter = 1;
+
+    # parse entries
+    foreach my $lease (@all_leases) {
+        # skip invalid lines
+        next if not ($lease =~ /^\s+([\.\d]+)\s+{.*starts \d+ ([\/\d\ \:]+);.*ends \d+ ([\/\d\ \:]+);.*ethernet ([a-f0-9:]+);(.*client-hostname \"\S+\";)*/s);
+        # skip outdated lines
+        next if ($opt_keep eq 'active' and $3 lt $gm_now);
+
+        my $percent = (($counter / $total_leases)*100);
+        printf "Processing: %2d%% complete\r", $percent;
+        ++$counter;
+
+        my $mac = $4;
+        my $date_end = $3;
+        my %entry = (
+            'ip' => $1,
+            'date_begin' => $2,
+            'date_end' => $date_end,
+            'mac' => $mac
+        );
+
+        $entry{'date_begin'} =~ s#\/#-#g; # long live ISO 8601
+        $entry{'date_end'}   =~ s#\/#-#g;
+        $date_end            =~ s#\/#-#g;
+
+        if ($opt_keep eq 'all') {
+            push(@leases, \%entry);
+        } elsif (not defined $tmp_leases{$mac} or $tmp_leases{$mac}{'date_end'} lt $date_end) {
+            $tmp_leases{$mac} = \%entry;
+        }
+    }
+
+    # In case we used the hash to filtered
+    if (%tmp_leases) {
+        foreach (sort keys %tmp_leases) {
+            my $h = $tmp_leases{$_};
+            push(@leases, $h);
+        }
+    }
+}
+
+# Output all valid leases.
+sub output_leases() {
+    if ($opt_format eq 'human') {
+        printf "%-19s%-16s%-20s\n","MAC","IP","valid until";
+        print("=======================================================\n");
+    }
+    foreach (@leases) {
+       if ($opt_format eq 'human') {
+       printf("%-19s%-16s%-20s\n",
+          $_->{'mac'},       # MAC
+          $_->{'ip'},        # IP address
+          $_->{'date_end'})  # Date
+       } else {
+       printf("MAC %s IP %s BEGIN %s END %s\n",
+          $_->{'mac'},
+          $_->{'ip'},
+          $_->{'date_begin'},
+          $_->{'date_end'})
+       }
+    }
+}
+
+# Commandline Processing.
+sub cli_processing() {
+    while (my $arg = shift(@ARGV)) {
+        if ($arg eq '--help') {
+            print(
+            "Prints active DHCP leases.\n\n".
+            "Usage: list_dhcp_leases [options]\n".
+            " --help      shows this help\n".
+            " --parsable  machine readable output with full dates\n".
+            " --last      prints the last (even if end<now) entry for every MAC\n".
+            " --all       prints all entries i.e. more than one per MAC\n".
+            " --lease     uses the next argument as the name of the lease file\n".
+            "             the default is ./dhcpd.leases\n".
+            "\n");
+            exit(0);
+        } elsif ($arg eq '--parsable') {
+            $opt_format = 'parsable';
+        } elsif ($arg eq '--last') {
+            $opt_keep = 'last';
+        } elsif ($arg eq '--all') {
+            $opt_keep = 'all';
+        } elsif ($arg eq '--lease') {
+            $LEASES = shift(@ARGV);
+        } else {
+            die("Unknown option $arg");
+        }
+    }
+}
+
+#
+# main()
+#
+cli_processing();
+read_dhcpd_leases();
+process_leases();
+output_leases();
+
