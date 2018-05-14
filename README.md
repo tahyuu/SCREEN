@@ -54,7 +54,7 @@
 
 
 * Where is test log.<br>
-  you can find test log in SCREEN/TestLog/.
+  you can find test detail log in SCREEN/FTLog/.
   you can also find the test result summry in SCREEN/data.csv<br><br><br><br><br><br><br><br><br>
   
 <font color="#FF0000">##################################################################################<br>
