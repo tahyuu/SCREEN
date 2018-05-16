@@ -23,7 +23,6 @@
       yum -y install python-pip
       pip install --upgrade pip
       pip install pexpect
-      
       yum install OpenIPMI
       yum install ipmitool
       ```
