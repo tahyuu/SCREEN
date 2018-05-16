@@ -32,9 +32,10 @@ class TestEngine(multiprocessing.Process):
         i=0
         while True:
             time.sleep(self.intermission)
+            self.scr.amb_sensores["test_start_time"]=datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+            print "                 %s" %self.scr.amb_sensores["test_start_time"]
             self.scr.Run2()
             self.scr.amb_sensores["serial_number"]=self.scr.serial_number
-            self.scr.amb_sensores["test_start_time"]=self.scr.testStartTime
             self.scr.amb_sensores["test_index"]=i
             self.ResultList.append(self.scr.amb_sensores)
             i=i+1
@@ -68,31 +69,53 @@ def stop_test(stop):
             break
         print 'press Q or ctrl+c to quit'
         #rate.sleep()
-def Wait(seconds,stoped):
+def WaitStop(seconds,stoped):
         count=0
         while (count < seconds):
             ncount = seconds - count
-            sys.stdout.write("\r     the Program will stop in ------ %d s ------- " % ncount)
+            sys.stdout.write("\r     the Program will stop in  ------ %s s ------- " % str.ljust(str(ncount),2))
             sys.stdout.flush()
             time.sleep(1)
             count += 1
         stoped.value=1
         
+def WaitStart(seconds):
+        count=0
+        while (count < seconds):
+            ncount = seconds - count
+            sys.stdout.write("\r     the Program will start in ------ %s s ------- " % str.ljust(str(ncount),2))
+            sys.stdout.flush()
+            time.sleep(1)
+            count += 1
+        while True:
+            yes_no= raw_input("\nDo you want to start test[y/n]? : ")
+            if str.upper(yes_no)=="Y" or str.upper(yes_no)=="YES":
+                break
+            else:
+                pass
+
         
 if __name__=="__main__":
+    cf = ConfigParser.ConfigParser()
+    cf.read("config.ini")
+    test_slot_amount=cf.get("MULTI","test_slot_amount")
+    wait_time=cf.get("MULTI","wait_time")
+    test_time=cf.get("MULTI","test_time")
+
     mgr = multiprocessing.Manager()
     stoped = Value('d', 0.0)
     result_list = mgr.list()
     jobs = []
-    for i in range(1,4):
+    for i in range(1,int(test_slot_amount)+1):
         p = TestEngine()
         p.Init(i,result_list,stoped)
         jobs.append(p)
     for p in jobs:
         p.GetIpaddres()
+    WaitStart(int(wait_time))
     for p in jobs:
         p.start()
-    p1 = Process(target=Wait, args=(30,stoped))
+    p1 = Process(target=WaitStop, args=(int(test_time),stoped))
     p1.start()
     for p in jobs:
         p.join()
@@ -120,13 +143,13 @@ if __name__=="__main__":
                     write_str=write_str+str(li["amb%s_read_raw_data" %amb_index])+","
                     write_str=write_str+str(li["amb%s_read_temp" %amb_index])+","
         write_str=write_str.strip(",")+"\n"
-    print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    print "\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     print "Test Log"
     print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     print write_str.strip()
     print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     log=Log()
-    log.Open(datetime.now().strftime("%Y%m%d%H%M%S")+'.csv')
+    log.Open("Mul_Log/"+datetime.now().strftime("%Y%m%d%H%M%S")+'.csv')
     log.PrintNoTime(write_str.strip())
     print "Test End"
 
