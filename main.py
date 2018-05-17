@@ -19,7 +19,6 @@ class TestEngine(multiprocessing.Process):
         self.RunList=[]
         self.ResultList=d
         self.scr=SCREEN(i)
-        self.serial_number=self.scr.serial_number
         self.intermission=int(self.cf.get("MULTI","test_intermission"))
         self.startTime=""
         if self.debug=="True":
@@ -27,6 +26,8 @@ class TestEngine(multiprocessing.Process):
             self.scr.bmc_mac=self.cf.get("DEBUG", "bmc_mac_%s" %i)
         else:
             self.scr.ScanData()
+        #to pass the serial_number
+        self.serial_number=self.scr.serial_number
         self.scr.InitLog()
     def run(self):
         i=0
@@ -105,11 +106,13 @@ if __name__=="__main__":
     mgr = multiprocessing.Manager()
     stoped = Value('d', 0.0)
     result_list = mgr.list()
+    sn_list=[]
     jobs = []
     for i in range(1,int(test_slot_amount)+1):
         p = TestEngine()
         p.Init(i,result_list,stoped)
         jobs.append(p)
+        sn_list.append(p.serial_number)
     for p in jobs:
         p.GetIpaddres()
     WaitStart(int(wait_time))
@@ -121,11 +124,10 @@ if __name__=="__main__":
         p.join()
     write_str=""
     #to get SN list
-    sn_list=[]
     index_list=[]
     for li in result_list:
-        if sn_list.count(li["serial_number"])==0:
-            sn_list.append(li["serial_number"])
+        #if sn_list.count(li["serial_number"])==0:
+        #    sn_list.append(li["serial_number"])
         if index_list.count(li["test_index"])==0:
             index_list.append(li["test_index"])
     index_list.sort()
