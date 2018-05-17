@@ -23,6 +23,8 @@
       yum -y install python-pip
       pip install --upgrade pip
       pip install pexpect
+      yum install OpenIPMI
+      yum install ipmitool
       ```
   * How to setup dhcp server<br>
       in this program we will use dhcp service. so that we can get the test unit ipaddress via mac.<br>
