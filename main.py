@@ -9,7 +9,7 @@ import pexpect
 import commands
 import multiprocessing
 from multiprocessing import Process, Value, Array
-from screen2 import *
+from screen3 import *
 class TestEngine(multiprocessing.Process):
     def Init(self,i,d,stoped):
         self.cf = ConfigParser.ConfigParser()
