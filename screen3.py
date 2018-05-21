@@ -135,13 +135,13 @@ class SCREEN():
         #to create test log and ask SN and MAC
         ########################################
         while True:
-            self.serial_number = raw_input("Please Input Serial Number : ")
+            self.serial_number = raw_input("[Slot %s] Please Input Serial Number : " %self.testIndex)
             p = re.compile(self.sn_re)
             if p.match(self.serial_number):
                 break
         if self.bmc_ip_get_type=="0":
             while True:
-                self.bmc_mac = raw_input("  Please Input MAC Address : ").replace(":","")
+                self.bmc_mac = raw_input("[Slot %s]  Please Input MAC Address : " %self.testIndex).replace(":","")
                 p = re.compile(self.mac_re)
                 if p.match(self.bmc_mac):
                     self.bmc_mac=":".join(re.findall("[0-9a-fA-F]{2}",self.bmc_mac))
@@ -317,7 +317,7 @@ class SCREEN():
         
 if __name__=="__main__":
     while True:
-        cre=SCREEN(0)
+        cre=SCREEN(1)
         cre.ScanData()
         cre.Wait(cre.wait_time)
         cre.InitLog()
