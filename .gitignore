@@ -1,3 +1,9 @@
 *.log
 *.pyc
+*.csv
+*.zip
+*.py_bak
+*.JPG
+config2.ini
+main2.py
 dhcpd.leases
