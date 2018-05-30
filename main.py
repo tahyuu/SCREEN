@@ -17,6 +17,7 @@ class TestEngine(multiprocessing.Process):
         self.cf.read("config.ini")
         self.stoped=stoped
         self.debug=self.cf.get("DEBUG", "debug")
+        self.fru_part_no_updated=self.cf.get("MULTI", "fru_part_no_update")
         self.RunList=[]
         self.ResultList=d
         self.scr=SCREEN(i)
@@ -43,6 +44,8 @@ class TestEngine(multiprocessing.Process):
             i=i+1
             if self.stoped.value==1:
                 break
+        if self.fru_part_no_updated=="True":
+            self.scr.UpdateFru()
     def SaveData(self):
         pass
         
