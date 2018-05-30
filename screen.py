@@ -5,6 +5,7 @@ import ConfigParser
 from optparse import OptionParser
 import pexpect
 import commands
+import random
 class bcolors:
     def __init__(self):
         self.HEADER = '\033[95m'
@@ -77,40 +78,25 @@ class SCREEN():
   ##          ##      ##     ######    #########   \n \
 ***************************************************\n'
         self.log=Log()
-    def SendReturn(self, cmdAsciiStr):
-        self.f = subprocess.Popen(cmdAsciiStr, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        tmp = "Send = "+cmdAsciiStr
-        #print tmp
-        self.log.Print(tmp)
-    def RecvTerminatedBy(self, *prompt_ptr):
-        if len(prompt_ptr) == 0:
-            prompt = self.PROMPT
-        else:
-            prompt = prompt_ptr[0]
-        #print 'Rece = '
-        self.log.Print("Rece = ")
-        stdout = ''
-        while self.f.poll() == None:
-            stdout_line = self.f.stdout.readline()
-            stdout = stdout + stdout_line
-            if stdout_line != '':
-                #print stdout_line,
-                self.log.PrintNoTime(stdout_line.rstrip())
-        else:
-            stdout_lines = self.f.stdout.read()
-            stdout = stdout + stdout_lines
-            if stdout_lines != '':
-                #print stdout_lines,
-                self.log.PrintNoTime(stdout_lines[0:-1])
 
-        if stdout != '':
-            return stdout
-            #print stdout_lines,
-        else:
-            stderr = self.f.stderr.read()
-            #print stderr,
-            self.log.PrintNoTime(stderr.rstrip())
-            return stderr
+    def SendReturn(self, cmdAsciiStr):
+        #self.f = subprocess.Popen(cmdAsciiStr, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.f = subprocess.Popen(cmdAsciiStr, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+        tmp = "Send = %s" %cmdAsciiStr
+        #self.log.Print(tmp)
+    def RecvTerminatedBy(self,timeout=3):
+        t_beginning = time.time()
+        seconds_passed = 0
+        while True:
+            if self.f.poll() is not None:
+                break
+            seconds_passed = time.time() - t_beginning
+            if timeout and seconds_passed > timeout:
+                self.f.terminate()
+                print "Communicate timeout!!!!"
+            time.sleep(0.01)
+        return self.f.stdout.read()
+
     def PingHost(self,host):
         #step 1 ping dhcp server
         self.ping_wait=30
@@ -149,13 +135,13 @@ class SCREEN():
         #to create test log and ask SN and MAC
         ########################################
         while True:
-            self.serial_number = raw_input("Please Input Serial Number : ")
+            self.serial_number = raw_input("[Slot %s] Please Input Serial Number : " %self.testIndex)
             p = re.compile(self.sn_re)
             if p.match(self.serial_number):
                 break
         if self.bmc_ip_get_type=="0":
             while True:
-                self.bmc_mac = raw_input("  Please Input MAC Address : ").replace(":","")
+                self.bmc_mac = raw_input("[Slot %s]  Please Input MAC Address : " %self.testIndex).replace(":","")
                 p = re.compile(self.mac_re)
                 if p.match(self.bmc_mac):
                     self.bmc_mac=":".join(re.findall("[0-9a-fA-F]{2}",self.bmc_mac))
@@ -228,8 +214,11 @@ class SCREEN():
             print self.bc.BGFAIL(self.home_dir + '/FTLog/FAIL/' + self.log_filename)
             os.system(moveFAIL)
     def Run2(self):
+        #self.UpdateFru()
         self.AMBTest(0,False) 
+        time.sleep(random.uniform(0,0.1))
         self.AMBTest(1,False) 
+        time.sleep(random.uniform(0,0.1))
         self.AMBTest(4,False)
     def Wait(self,seconds):
         count=0
@@ -252,11 +241,13 @@ class SCREEN():
         update_command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,fru_update_cmd)
         self.SendReturn(update_command)
         line=self.RecvTerminatedBy()
+        self.log.Print(line)
         #check fru
         fru_update_cmd="fru"
         check_command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,fru_update_cmd)
         self.SendReturn(check_command)
         line=self.RecvTerminatedBy()
+        self.log.Print(line)
         if line.find("Board Part Number     : MP-00033236-010")>=0:
             self.log.Print("update FRU sucess")
         else:
@@ -293,13 +284,26 @@ class SCREEN():
         else:
             str_amb_temp="30"
 
-        command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,amb_cmd)
-        self.SendReturn(command)
-        test=self.RecvTerminatedBy().strip()
-        real_temp=float(int(test.replace(" ","")[:3],16))/16
+        test=""
+        i=0
+        while i<5:
+            command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,amb_cmd)
+            self.SendReturn(command)
+            test=self.RecvTerminatedBy().strip()
+            if test.find("Communicate timeout")>=0:
+                continue
+            else:
+                break
+        try:
+            real_temp=float(int(test.replace(" ","")[:3],16))/16
+        except:
+            real_temp="NA"
+            test="NA"
         self.amb_sensores["amb%s_read_raw_data" %amb_index]=test
         self.amb_sensores["amb%s_read_temp" %amb_index]=real_temp
         self.amb_sensores["amb%s_real_temp" %amb_index]=str_amb_temp
+        if not askInput:
+            return True
         self.log.Print("SYS_AMB_TEMP_%s raw data is[ %s ]; temperature in IC is [ %s degrees C ]; temperature sensor read value is [%s degrees C]" %(amb_index,test,real_temp,str_amb_temp))
         amb_temp=float(str_amb_temp)
         if amb_temp-int(self.pass_qut) <= real_temp and real_temp<=amb_temp+int(self.pass_qut):
@@ -316,7 +320,7 @@ class SCREEN():
         
 if __name__=="__main__":
     while True:
-        cre=SCREEN(0)
+        cre=SCREEN(1)
         cre.ScanData()
         cre.Wait(cre.wait_time)
         cre.InitLog()

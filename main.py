@@ -9,7 +9,8 @@ import pexpect
 import commands
 import multiprocessing
 from multiprocessing import Process, Value, Array
-from screen3 import *
+from screen import *
+import random
 class TestEngine(multiprocessing.Process):
     def Init(self,i,d,stoped):
         self.cf = ConfigParser.ConfigParser()
@@ -32,7 +33,7 @@ class TestEngine(multiprocessing.Process):
     def run(self):
         i=0
         while True:
-            time.sleep(self.intermission)
+            time.sleep(self.intermission-random.uniform(0,0.1))
             self.scr.amb_sensores["test_start_time"]=datetime.now().strftime("%Y/%m/%d %H:%M:%S")
             print "                 %s" %self.scr.amb_sensores["test_start_time"]
             self.scr.Run2()
