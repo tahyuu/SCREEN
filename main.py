@@ -12,7 +12,7 @@ from multiprocessing import Process, Value, Array
 from screen import *
 import random
 class TestEngine(multiprocessing.Process):
-    def Init(self,i,d,stoped):
+    def Init(self,i,d,stoped,fru_update_result):
         self.cf = ConfigParser.ConfigParser()
         self.cf.read("config.ini")
         self.stoped=stoped
@@ -20,6 +20,7 @@ class TestEngine(multiprocessing.Process):
         self.fru_part_no_updated=self.cf.get("MULTI", "fru_part_no_update")
         self.RunList=[]
         self.ResultList=d
+        self.fru_update_result=fru_update_result
         self.scr=SCREEN(i)
         self.intermission=int(self.cf.get("MULTI","test_intermission"))
         self.startTime=""
@@ -46,6 +47,7 @@ class TestEngine(multiprocessing.Process):
                 break
         if self.fru_part_no_updated=="True":
             self.scr.UpdateFru()
+            self.fru_update_result.append({self.scr.serial_number:self.scr.fru_update_status})
     def SaveData(self):
         pass
         
@@ -106,15 +108,17 @@ if __name__=="__main__":
     test_slot_amount=cf.get("MULTI","test_slot_amount")
     wait_time=cf.get("MULTI","wait_time")
     test_time=cf.get("MULTI","test_time")
+    bc=bcolors()
 
     mgr = multiprocessing.Manager()
     stoped = Value('d', 0.0)
     result_list = mgr.list()
+    fru_update_result= mgr.list()
     sn_list=[]
     jobs = []
     for i in range(1,int(test_slot_amount)+1):
         p = TestEngine()
-        p.Init(i,result_list,stoped)
+        p.Init(i,result_list,stoped,fru_update_result)
         jobs.append(p)
         sn_list.append(p.serial_number)
     for p in jobs:
@@ -153,6 +157,14 @@ if __name__=="__main__":
     print "Test Log"
     print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     print write_str.strip()
+    print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    print "FRU Update Results"
+    print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    for fru_st in fru_update_result:
+        if str(fru_st).find("PASS")>=0:
+            print bc.BGPASS(str(fru_st))
+        else:
+            print bc.BGFAIL(str(fru_st))
     print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     log=Log()
     log.Open("Mul_Log/"+datetime.now().strftime("%Y%m%d%H%M%S")+'.csv')
