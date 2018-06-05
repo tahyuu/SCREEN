@@ -55,6 +55,7 @@ class SCREEN():
         self.pass_qut=self.cf.get("CHECK", "pass_margin")
         self.bmc_ip_get_type=self.cf.get("BMC", "bmc_ip_get_type")
         self.amb_sensores={}
+        self.fru_update_status="FAIL"
         
         self.PASS = '\n \
 ***************************************************\n \
@@ -239,19 +240,23 @@ class SCREEN():
         #update fru
         fru_update_cmd="fru edit 0 field b 3 MP-00033236-010"
         update_command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,fru_update_cmd)
-        self.SendReturn(update_command)
-        line=self.RecvTerminatedBy()
-        self.log.Print(line)
-        #check fru
-        fru_update_cmd="fru"
-        check_command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,fru_update_cmd)
-        self.SendReturn(check_command)
-        line=self.RecvTerminatedBy()
-        self.log.Print(line)
-        if line.find("Board Part Number     : MP-00033236-010")>=0:
-            self.log.Print("update FRU sucess")
-        else:
-            self.log.Print("update FRU failed")
+        for i in range(5):
+            time.sleep(5)
+            self.SendReturn(update_command)
+            line=self.RecvTerminatedBy()
+            self.log.Print(line)
+            #check fru
+            fru_update_cmd="fru"
+            check_command=self.bmc_command_header %(self.bmc_ip,self.bmc_username,self.bmc_password,fru_update_cmd)
+            self.SendReturn(check_command)
+            line=self.RecvTerminatedBy()
+            self.log.Print(line)
+            if line.find("Board Part Number     : MP-00033236-010")>=0:
+                self.log.Print("update FRU sucess")
+                self.fru_update_status="PASS"
+                break
+            else:
+                self.log.Print("update FRU failed")
 
     def AMBTest(self,amb_index,askInput):
         #commmand for get AMB0 
